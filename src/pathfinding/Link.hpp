@@ -4,10 +4,10 @@ class Node;
 class Link
 {
 private:
-    Node* _end;
+        Node* _end;
 public:
-    Link(Node *end);
-    ~Link();
+        Link(Node *end);
+        ~Link();
 
-    Node* getNode() const;
+        Node* getNode() const;
 };

@@ -9,5 +9,5 @@ Link::~Link()
 }
 
 Node* Link::getNode() const {
-    return _end;
+        return _end;
 }

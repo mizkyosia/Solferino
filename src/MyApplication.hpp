@@ -1,9 +1,9 @@
 /**
  * MyApplication.hpp skeleton
  * Contributors:
- *      * Arthur Sonzogni
+ *            * Arthur Sonzogni
  * Licence:
- *      * MIT
+ *            * MIT
  */
 
 #ifndef OPENGL_CMAKE_SKELETON_MYAPPLICATION
@@ -14,25 +14,29 @@
 
 class MyApplication : public Application {
  public:
-  MyApplication();
+    MyApplication();
 
  protected:
-  virtual void loop();
+    virtual void loop();
 
  private:
-  const int size = 100;
+    const int size = 100;
 
-  // shader
-  Shader vertexShader;
-  Shader fragmentShader;
-  ShaderProgram shaderProgram;
+    bool drawTriangle = true;
+	float imgui_size = 1.0f;
+	float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
 
-  // shader matrix uniform
-  glm::mat4 projection = glm::mat4(1.0);
-  glm::mat4 view = glm::mat4(1.0);
+    // shader
+    Shader vertexShader;
+    Shader fragmentShader;
+    ShaderProgram shaderProgram;
 
-  // VBO/VAO/ibo
-  GLuint vao, vbo, ibo;
+    // shader matrix uniform
+    glm::mat4 projection = glm::mat4(1.0);
+    glm::mat4 view = glm::mat4(1.0);
+
+    // VBO/VAO/ibo
+    GLuint vao, vbo, ibo;
 };
 
-#endif  // OPENGL_CMAKE_SKELETON_MYAPPLICATION
+#endif    // OPENGL_CMAKE_SKELETON_MYAPPLICATION

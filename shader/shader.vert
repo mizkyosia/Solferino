@@ -14,13 +14,13 @@ out vec3 fNormal;
 
 void main(void)
 {
-    fPosition = view * vec4(position,1.0);
-    fLightPosition = view * vec4(0.0,0.0,1.0,1.0);
+        fPosition = view * vec4(position,1.0);
+        fLightPosition = view * vec4(0.0,0.0,1.0,1.0);
 
-    fColor = color;
-    fNormal = vec3(view * vec4(normal,0.0));
+        fColor = color;
+        fNormal = vec3(view * vec4(normal,0.0));
 
-    gl_Position = projection * fPosition;
-    /*gl_Position.x *= 1000.0f;*/
-    /*gl_Position.y = 0.0;*/
+        gl_Position = projection * fPosition;
+        /*gl_Position.x *= 1000.0f;*/
+        /*gl_Position.y = 0.0;*/
 }
