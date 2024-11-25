@@ -1,39 +1,38 @@
 # Projects Settings
-cmake_minimum_required (VERSION 3.1)
-project (opengl-cmake-skeleton)
+cmake_minimum_required (VERSION 3.15)
+project (Solferino)
 
 # The main executable
-add_executable(opengl-cmake-skeleton
-  src/Application.cpp
-  src/Application.cpp
-  src/MyApplication.cpp
-  src/MyApplication.cpp
-  src/glError.hpp
-  src/glError.cpp
-  src/main.cpp
-  src/Shader.hpp
-  src/Shader.cpp
-)
+add_subdirectory(src)
 
-set_property(TARGET opengl-cmake-skeleton PROPERTY CXX_STANDARD 11)
-target_compile_options(opengl-cmake-skeleton PRIVATE -Wall)
+# Copy assets in build directory
+add_custom_target(copy_assets ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${CMAKE_SOURCE_DIR}/assets
+  ${CMAKE_BINARY_DIR}/assets
+  COMMENT "Copying assets")
+
+# Compil options
+set_property(TARGET Solferino PROPERTY CXX_STANDARD 20)
+target_compile_options(Solferino PRIVATE -Wall)
 
 add_definitions(-DGLEW_STATIC)
 add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(lib/glew EXCLUDE_FROM_ALL)
 add_subdirectory(lib/glm EXCLUDE_FROM_ALL)
 
-target_link_libraries(opengl-cmake-skeleton
+# Libraries
+target_link_libraries(Solferino
   PRIVATE glfw
   PRIVATE libglew_static
   PRIVATE glm
 )
 
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/asset.hpp.in
-  ${CMAKE_CURRENT_BINARY_DIR}/src/asset.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/util/asset.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/src/util/asset.hpp
 )
-target_include_directories(opengl-cmake-skeleton
+target_include_directories(Solferino
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src
 )

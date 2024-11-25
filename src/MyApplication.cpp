@@ -14,8 +14,8 @@
 #include <iostream>
 #include <vector>
 
-#include "asset.hpp"
-#include "glError.hpp"
+#include "util/asset.hpp"
+#include "util/glError.hpp"
 
 struct VertexType {
   glm::vec3 position;

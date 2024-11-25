@@ -9,8 +9,8 @@
 #ifndef OPENGL_CMAKE_SKELETON_MYAPPLICATION
 #define OPENGL_CMAKE_SKELETON_MYAPPLICATION
 
-#include "Application.hpp"
-#include "Shader.hpp"
+#include "util/Application.hpp"
+#include "util/Shader.hpp"
 
 class MyApplication : public Application {
  public:
