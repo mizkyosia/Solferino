@@ -22,8 +22,8 @@ class MyApplication : public Application {
  private:
     const int size = 100;
 
-    bool drawTriangle = true;
-	float imgui_size = 1.0f;
+    bool drawMesh = true;
+	float cameraAngle = 1.0f;
 	float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
 
     // shader

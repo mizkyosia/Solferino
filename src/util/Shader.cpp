@@ -37,7 +37,7 @@ void getFileContents(const char *filename, vector<char> &buffer)
     else
     {
         throw std::invalid_argument(string("The file ") + filename +
-                                                                " doesn't exists");
+                                    " doesn't exists");
     }
 }
 
@@ -96,7 +96,7 @@ ShaderProgram::ShaderProgram()
 }
 
 ShaderProgram::ShaderProgram(std::initializer_list<Shader> shaderList)
-        : ShaderProgram()
+    : ShaderProgram()
 {
     for (auto &s : shaderList)
         glAttachShader(handle, s.getHandle());
@@ -151,48 +151,48 @@ GLint ShaderProgram::attribute(const std::string &name)
 }
 
 void ShaderProgram::setAttribute(const std::string &name,
-                                                                 GLint size,
-                                                                 GLsizei stride,
-                                                                 GLuint offset,
-                                                                 GLboolean normalize,
-                                                                 GLenum type)
+                                 GLint size,
+                                 GLsizei stride,
+                                 GLuint offset,
+                                 GLboolean normalize,
+                                 GLenum type)
 {
     GLint loc = attribute(name);
     glEnableVertexAttribArray(loc);
     glVertexAttribPointer(loc, size, type, normalize, stride,
-                                                reinterpret_cast<void *>(offset));
+                          reinterpret_cast<void *>(offset));
 }
 
 void ShaderProgram::setAttribute(const std::string &name,
-                                                                 GLint size,
-                                                                 GLsizei stride,
-                                                                 GLuint offset,
-                                                                 GLboolean normalize)
+                                 GLint size,
+                                 GLsizei stride,
+                                 GLuint offset,
+                                 GLboolean normalize)
 {
     setAttribute(name, size, stride, offset, normalize, GL_FLOAT);
 }
 
 void ShaderProgram::setAttribute(const std::string &name,
-                                                                 GLint size,
-                                                                 GLsizei stride,
-                                                                 GLuint offset,
-                                                                 GLenum type)
+                                 GLint size,
+                                 GLsizei stride,
+                                 GLuint offset,
+                                 GLenum type)
 {
     setAttribute(name, size, stride, offset, false, type);
 }
 
 void ShaderProgram::setAttribute(const std::string &name,
-                                                                 GLint size,
-                                                                 GLsizei stride,
-                                                                 GLuint offset)
+                                 GLint size,
+                                 GLsizei stride,
+                                 GLuint offset)
 {
     setAttribute(name, size, stride, offset, false, GL_FLOAT);
 }
 
 void ShaderProgram::setUniform(const std::string &name,
-                                                             float x,
-                                                             float y,
-                                                             float z)
+                               float x,
+                               float y,
+                               float z)
 {
     glUniform3f(uniform(name), x, y, z);
 }
@@ -240,6 +240,11 @@ void ShaderProgram::setUniform(const std::string &name, float val)
 void ShaderProgram::setUniform(const std::string &name, int val)
 {
     glUniform1i(uniform(name), val);
+}
+
+void ShaderProgram::setUniform(const std::string &name, float val[4])
+{
+    glUniform4f(uniform(name), val[0], val[1], val[2], val[3]);
 }
 
 ShaderProgram::~ShaderProgram()

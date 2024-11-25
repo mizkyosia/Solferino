@@ -6,6 +6,7 @@ in vec4 color;
 
 uniform mat4 projection;
 uniform mat4 view;
+uniform vec4 baseColor;
 
 out vec4 fPosition;
 out vec4 fColor;
@@ -17,7 +18,7 @@ void main(void)
         fPosition = view * vec4(position,1.0);
         fLightPosition = view * vec4(0.0,0.0,1.0,1.0);
 
-        fColor = color;
+        fColor = color + baseColor;
         fNormal = vec3(view * vec4(normal,0.0));
 
         gl_Position = projection * fPosition;
