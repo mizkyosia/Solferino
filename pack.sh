@@ -1,0 +1,1 @@
+zip -r CIR2_Solferino.zip ./build/assets/* ./build/Solferino

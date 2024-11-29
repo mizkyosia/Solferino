@@ -1,0 +1,3 @@
+[submodule "lib/rlImGui"]
+	path = lib/rlImGui
+	url = https://github.com/raylib-extras/rlImGui.git
