@@ -4,22 +4,38 @@
 
 #include "../pathfinding/Node.hpp"
 #include "../agents/Vehicle.hpp"
+#include "CustomCamera.hpp"
 
 class UI
 {
-    bool showMain, showAgent, showNode, showCamera;
+    CustomCamera &_camera;
+
+    bool _simPaused;
+
+    bool _showMain, _showAgent, _showNode, _showCamera;
+
+    bool _destroyVehicle, _destroyNode;
 
 public:
-    UI();
+
+    Node* _selectedNode;
+    Vehicle* _selectedVehicle;
+
+    UI(CustomCamera &camera);
     ~UI();
 
-    void show(bool &gamePaused, Node *selectedNode, Vehicle *selectedVehicle);
+    void show();
 
-    void mainMenu(bool &gamePaused);
+    void mainMenu();
 
-    void agentMenu(Vehicle *selectedVehicle);
+    void agentMenu();
 
-    void nodeMenu(Node *selectedNode);
+    void nodeMenu();
 
-    void debugCamera(Camera3D &camera, Vector3& target);
+    void debugCamera();
+
+    bool& isSimulationPaused();
+
+    Vehicle* destroyedVehicle();
+    Node* destroyedNode();
 };

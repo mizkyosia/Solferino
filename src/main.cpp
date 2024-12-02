@@ -1,8 +1,10 @@
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 #include <raylib.h>
 #include <raymath.h>
+#include <rlgl.h>
 
 #include <imgui.h>
 #include "rlImGui.h"
@@ -10,20 +12,19 @@
 #include "pathfinding/Graph.hpp"
 #include "agents/Car.hpp"
 #include "ui/UI.hpp"
+#include "ui/CustomCamera.hpp"
 #include "util/Misc.hpp"
 
 using namespace std;
 
-float zoom = Constants::BaseZoom;
+Model road, carModels[2];
 
-bool simPaused = false;
+Graph graph;
 
-Model road, cars[2];
+bool debugCars = false, debugNodes = false;
 
-Camera3D camera{0};
-
-/// @brief Target position for the camera, in **SPHERICAL COORDINATES**
-Vector3 cameraTargetPosition(zoom, PI / 4, 0);
+/// @brief Collection of the vehicles currently in the simulation
+vector<Vehicle> vehicles;
 
 /// @brief Load all models needed by the program
 void loadModels()
@@ -31,78 +32,29 @@ void loadModels()
     double t0 = GetTime() * 1000.0;
 
     road = LoadModel("assets/models/road.vox");
-    
+    road.transform.m13 -= Constants::GroundLevel;
+
     for (int i = 0; i < Constants::CarVariantsNb; i++)
     {
-        cars[i] = LoadModel(TextFormat("assets/models/car%i.vox", i));
+        carModels[i] = LoadModel(TextFormat("assets/models/car%i.vox", i));
     }
-    
+
     double t1 = GetTime() * 1000.0;
 
     TraceLog(LOG_INFO, TextFormat("Models loaded in %.3f ms", t1 - t0));
 }
 
 /// @brief Unloads all models used by the program
-void unloadModels() {
+void unloadModels()
+{
     UnloadModel(road);
 
     for (int i = 0; i < Constants::CarVariantsNb; i++)
     {
-        UnloadModel(cars[i]);
-    }
-}
-
-/// @brief Sets the camera, prior to the main loop
-void setupCamera()
-{
-    camera.position = (Vector3){50.0f, 50.0f, 50.0f}; // Camera position
-    camera.target = (Vector3){0.0f, 0.0f, 0.0f};      // Camera looking at origin point
-    camera.up = (Vector3){0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;                              // Camera field-of-view Y
-    camera.projection = CAMERA_PERSPECTIVE;           // Camera mode type
-}
-
-/// @brief Updates the camera's position
-/// @param dt Delta time
-void updateCamera(float dt)
-{
-    Vector2 dmouse = GetMouseDelta();
-
-    auto pos = Math::cartesianToSpherical(camera.position);
-
-    // If right mouse button is down
-    if (IsMouseButtonDown(1))
-    {
-        float scroll = GetMouseWheelMove();
-
-        // Restricts zoom to a range
-        zoom = clamp(zoom - scroll * Constants::ZoomMultiplier * log(zoom), Constants::ZoomMin, Constants::ZoomMax);
-
-        // Define spherical coordinates of the camera
-        // Distance to center
-        cameraTargetPosition.x = zoom;
-        // Vertical tilt (theta angle). Forces camera to stay above ground
-        cameraTargetPosition.y = clamp(cameraTargetPosition.y + dt * -dmouse.y, 0.001f, PI / 2);
-        // Horizontal azimuth angle (phi)
-        cameraTargetPosition.z += dt * dmouse.x;
+        UnloadModel(carModels[i]);
     }
 
-    // Smooth transition towards target position
-    pos = Vector3Lerp(pos, cameraTargetPosition, Constants::CameraMovementSmoothing);
-
-    // Restricts y-axis rotation in range [-pi, +pi]
-    if (pos.z > PI)
-    {
-        cameraTargetPosition.z -= 2*PI;
-        pos.z -= 2 * PI;
-    }
-    else if (pos.z < -PI)
-    {
-        cameraTargetPosition.z += 2*PI;
-        pos.z += 2 * PI;
-    }
-
-    camera.position = Math::sphericalToCartesian(pos);
+    TraceLog(LOG_INFO, "Unloaded all models");
 }
 
 int main(int argc, char *argv[])
@@ -112,8 +64,6 @@ int main(int argc, char *argv[])
     int screenWidth = 1280;
     int screenHeight = 800;
 
-    bool open = true;
-
     srand(time(0));
 
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
@@ -121,17 +71,25 @@ int main(int argc, char *argv[])
     SetTargetFPS(144);
     rlImGuiSetup(true);
 
-    UI Ui;
+    CustomCamera camera(graph, vehicles, road, debugNodes);
+
+    UI Ui(camera);
+
+    Shader testShader = LoadShader("assets/shaders/test.vs", "assets/shaders/test.fs");
 
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 
-    setupCamera();
+    Texture2D arrow = LoadTexture("assets/img/arrow.png");
+
+    RenderTexture world = LoadRenderTexture(screenWidth, screenHeight),
+                  overlay = LoadRenderTexture(screenWidth, screenHeight);
 
     loadModels();
 
-    Car car(0, 0, 0, simPaused, cars[0]);
+    vehicles.push_back(Car(0, 0, 0, Ui.isSimulationPaused(), carModels[0]));
+    vehicles.push_back(Car(-5, 0, 0, Ui.isSimulationPaused(), carModels[0]));
 
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -139,31 +97,97 @@ int main(int argc, char *argv[])
         // Get deltaTime : time the previous frame took to complete. Enables scaling of movement relative to FPS
         float dt = GetFrameTime();
 
-        updateCamera(dt);
+        // Update our custom camera
+        camera.update(dt);
 
-        BeginDrawing();
+        // Control debug displays
+        if (IsKeyPressed(Constants::KeyDebugVehicles))
+            debugCars = !debugCars;
+        if (IsKeyPressed(Constants::KeyDebugNodes))
+            debugNodes = !debugNodes;
+
+        // Start the OpenGL drawing context
+        BeginTextureMode(world);
         ClearBackground(DARKGRAY);
+
         BeginMode3D(camera);
 
-        DrawModel(road, (Vector3){-20, 0, -20}, 1.0f, WHITE);
+        DrawModel(road, Vector3Zeros, 1.0f, WHITE);
 
-        car.update();
-        car.draw(true);
+        DrawBoundingBox(GetModelBoundingBox(road), RED);
+
+        for (auto v : vehicles)
+        {
+            v.update();
+            v.draw(debugCars);
+        }
 
         EndMode3D();
-        // start ImGui Conent
+        EndTextureMode();
+
+        BeginTextureMode(overlay);
+        ClearBackground(Fade(BLACK, debugNodes ? .4f : 0));
+        BeginMode3D(camera);
+
+        if (debugNodes)
+        {
+            for (auto n = graph.getNodes().begin(); n < graph.getNodes().end(); n++)
+            {
+                Color col = ColorAlpha(n->getColor(), .7f);
+                if (&*n == Ui._selectedNode)
+                    col = n->getColor();
+                
+                // if(&*n == Ui._selectedNode) BeginShaderMode(testShader);
+                DrawSphere(n->getPos(), n->radius, col);
+                // if(&*n == Ui._selectedNode) EndShaderMode();
+
+                for (auto l : n->getAllLinks())
+                {
+                    DrawLine3D(n->getPos(), l->getPos() + Vector3(0, .1f, 0), col);
+                }
+
+                // If we have to link this node with the currently selected one
+                if (Ui._selectedNode != nullptr && IsKeyPressed(Constants::KeyLinkNode) && camera.lookingAtNode(*n))
+                    Ui._selectedNode->link(*n);
+            }
+        }
+
+        EndMode3D();
+        EndTextureMode();
+
+        BeginDrawing();
+        DrawTextureRec(world.texture, {0, 0, (float)screenWidth, -(float)screenHeight}, {0, 0}, WHITE);
+        DrawTextureRec(overlay.texture, {0, 0, (float)screenWidth, -(float)screenHeight}, {0, 0}, WHITE);
+
+        // start ImGui Content
         rlImGuiBegin();
-        Ui.mainMenu(simPaused);
 
-        Ui.agentMenu(&car);
+        // Manage UI
+        Ui.show();
 
-        Ui.debugCamera(camera, cameraTargetPosition);
+        auto destroyedVehicle = Ui.destroyedVehicle();
+        if (destroyedVehicle != nullptr)
+        {
+            for (auto v = vehicles.begin(); v < vehicles.end(); v++)
+            {
+                if (&*v == destroyedVehicle)
+                {
+                    vehicles.erase(v);
+                    break;
+                }
+            }
+        }
+
+        auto destroyedNode = Ui.destroyedNode();
+        if (destroyedNode != nullptr)
+            graph.removeNode(destroyedNode);
 
         // end ImGui Content
         rlImGuiEnd();
 
+        // End OpenGL drawing context
+        // Past this point, nothing can be drawn onto screen
         EndDrawing();
-        //----------------------------------------------------------------------------------
     }
     rlImGuiShutdown();
 

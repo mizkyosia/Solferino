@@ -11,8 +11,6 @@ class Car : public Vehicle
 
 public:
     
-    Car(const float &x, const float &y, const float &initialRotation, bool &paused, Model &model);
+    Car(const float &x, const float &y, const float &initialRotation, bool &paused, const Model &model);
     ~Car();
-
-    void test();
 };

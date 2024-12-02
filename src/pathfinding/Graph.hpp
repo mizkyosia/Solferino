@@ -7,12 +7,20 @@
 class Graph
 {
 private:
+    unsigned long _currentId = 0;
+
     std::vector<Node> _nodes;
 
 public:
-    Graph(const std::vector<Node> nodes = std::vector<Node>());
+    Graph(std::vector<Node> nodes = std::vector<Node>());
     ~Graph();
 
-    void addNode(const Node &node);
-    std::vector<Node> findPath(const Node &from, const Node &to) const;
+    void addNode(Vector3 pos);
+    void removeNode(Node* node);
+
+    std::vector<Node> &getNodes();
+
+    int nodeCount();
+
+    std::vector<Node*> findPath(const Node &from, const Node &to, const char vehicleType) const;
 };
