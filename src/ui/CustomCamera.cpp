@@ -1,6 +1,8 @@
 #include "CustomCamera.hpp"
 
-CustomCamera::CustomCamera(Graph &graph, std::vector<Vehicle> &vehicles, Model &ground, bool& nodeDebug) : _graph(graph), _vehicles(vehicles), _ground(ground), _zoom(50), _nextPosition({Constants::BaseZoom, PI / 4, 0}), _nodeDebug(nodeDebug)
+CustomCamera::CustomCamera(Graph &graph) : _nextPosition({Util::BaseZoom, PI / 4, 0}),
+                                              _zoom(50),
+                                              _graph(graph)
 {
     position = (Vector3){50.0f, 50.0f, 50.0f}; // Camera position
     target = (Vector3){20, 0, 20};             // Camera looking at center of road
@@ -27,7 +29,7 @@ void CustomCamera::update(float dt)
         float scroll = GetMouseWheelMove();
 
         // Restricts zoom to a range
-        _zoom = std::clamp(_zoom - scroll * Constants::ZoomMultiplier * log(_zoom), Constants::ZoomMin, Constants::ZoomMax);
+        _zoom = std::clamp(_zoom - scroll * Util::ZoomMultiplier * log(_zoom), Util::ZoomMin, Util::ZoomMax);
 
         // Define spherical coordinates of the camera
         // Distance to center
@@ -37,14 +39,14 @@ void CustomCamera::update(float dt)
         // Horizontal azimuth angle (phi)
         _nextPosition.z += dt * dmouse.x;
     }
-    else if (_nodeDebug && (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(Constants::KeyAddNode) || IsKeyPressed(Constants::KeyLinkNode)))
+    else if (Util::DebugNodes && (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(Util::KeyAddNode) || IsKeyPressed(Util::KeyLinkNode)))
     {
         _ray = GetScreenToWorldRay(GetMousePosition(), *this);
-        if (IsKeyPressed(Constants::KeyAddNode))
+        if (IsKeyPressed(Util::KeyAddNode))
         {
-            for (int i = 0; i < _ground.meshCount; i++)
+            for (int i = 0; i < Util::Road.meshCount; i++)
             {
-                auto hitInfo = GetRayCollisionMesh(_ray, _ground.meshes[i], _ground.transform);
+                auto hitInfo = GetRayCollisionMesh(_ray, Util::Road.meshes[i], Util::Road.transform);
                 if (hitInfo.hit)
                 {
                     _graph.addNode(hitInfo.point);
@@ -59,7 +61,7 @@ void CustomCamera::update(float dt)
     }
 
     // Smooth transition towards target position
-    pos = Vector3Lerp(pos, _nextPosition, Constants::CameraMovementSmoothing);
+    pos = Vector3Lerp(pos, _nextPosition, Util::CameraMovementSmoothing);
 
     // Restricts y-axis rotation in range [-pi, +pi]
     if (pos.z > PI)
@@ -78,13 +80,13 @@ void CustomCamera::update(float dt)
 
 bool CustomCamera::lookingAtNode(Node &node) const
 {
-    return _nodeDebug && GetRayCollisionSphere(_ray, node.getPos(), node.radius).hit;
+    return Util::DebugNodes && GetRayCollisionSphere(_ray, node.getPos(), node.radius).hit;
 }
 
 Vehicle *CustomCamera::getSelectedVehicle(Vehicle *previous)
 {
     Vehicle *newPtr = nullptr;
-    for (auto v = _vehicles.begin(); v < _vehicles.end(); v++)
+    for (auto v : _graph.getVehicles())
     {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
@@ -95,18 +97,21 @@ Vehicle *CustomCamera::getSelectedVehicle(Vehicle *previous)
             // transform.m13 += v->_pos.y;
             // transform.m14 += v->_pos.z;
 
-            auto meshHitInfo = GetRayCollisionMesh(_ray, v->_model.meshes[0], transform);
-
-            // If we hit the vehicle, return a pointer to it
-            if (meshHitInfo.hit)
+            for (int i = 0; i < v->_model.meshCount; i++)
             {
-                // If we click the same vehicle, we un-select it
-                if (&*v == previous)
-                    return nullptr;
-                return &*v;
+                auto meshHitInfo = GetRayCollisionMesh(_ray, v->_model.meshes[i], transform);
+
+                // If we hit the vehicle, return a pointer to it
+                if (meshHitInfo.hit)
+                {
+                    // If we click the same vehicle, we un-select it
+                    if (v == previous)
+                        return nullptr;
+                    return v;
+                }
             }
         }
-        if (&*v == previous)
+        if (v == previous)
         {
             newPtr = previous;
             if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -123,9 +128,9 @@ Vehicle *CustomCamera::getSelectedVehicle(Vehicle *previous)
 Node *CustomCamera::getSelectedNode(Node *previous)
 {
     Node *newPtr = nullptr;
-    for (auto n = _graph.getNodes().begin(); n < _graph.getNodes().end(); n++)
+    for (auto n : _graph.getNodes())
     {
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && _nodeDebug)
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && Util::DebugNodes)
         {
             auto sphereHitInfo = GetRayCollisionSphere(_ray, n->getPos(), n->radius);
 
@@ -133,12 +138,12 @@ Node *CustomCamera::getSelectedNode(Node *previous)
             if (sphereHitInfo.hit)
             {
                 // If we click the same node, we un-select it
-                if (&*n == previous)
+                if (n == previous)
                     return nullptr;
-                return &*n;
+                return n;
             }
         }
-        if (&*n == previous)
+        if (n == previous)
         {
             newPtr = previous;
             if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT))

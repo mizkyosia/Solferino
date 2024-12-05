@@ -7,13 +7,22 @@ using namespace std::chrono;
 Vehicle::Vehicle(const float &x,
                  const float &y,
                  const float &initialRotation,
-                 bool &paused,
-                 const Model &model) : _pos((Vector3){x, y, 0.f}), _rot(initialRotation), _model(model), _paused(&paused),
-                                       _velocity(0), _acceleration(0), _moving(true)
+                 std::vector<Node *> path,
+                 const Model &model) : _velocity(0),
+                                       _acceleration(0),
+                                       _rot(initialRotation),
+                                       _moving(true),
+                                       _pos((Vector3){x, y, 0.f}),
+                                       _model(model),
+                                       _path(path)
 {
     auto bbox = GetModelBoundingBox(_model);
-    _size = bbox.max - bbox.min;
+    _size = (bbox.max - bbox.min);
     _lastUpdateTime = GetTime();
+
+    _offset = bbox.min;
+
+    TraceLog(LOG_INFO, "Spawned vehicle with size : %f, %f, %f and offset : %f, %f, %f ", _size.x, _size.y, _size.z, _offset.x, _offset.y, _offset.z);
 }
 
 Vehicle::~Vehicle()
@@ -22,20 +31,28 @@ Vehicle::~Vehicle()
 
 void Vehicle::update()
 {
+    if(_path.size() == 0) {
+        _despawn = true;
+        return;
+    }
+
     // Handle time updates
     auto newTime = GetTime();
     float dt = newTime - _lastUpdateTime;
     _lastUpdateTime = newTime;
 
     // If the simulation is paused, don't do anything
-    if (*_paused)
+    // Same if we don't have any nodes to follow
+    if (Util::SimPaused)
         return;
-    // const Node *target = _path.front();
-    // const Vector2 target_pos = target->getPos();
 
-    // const float theta = atan2f(target_pos.x, target_pos.y) - _rot;
+    const Node *target = _path.back();
+    const Vector3 target_dir = _pos - target->getPos();
 
-    _moving = IsKeyDown(KEY_W);
+    const float theta = atan2f(target_dir.x, target_dir.z);
+
+    // _moving = IsKeyDown(KEY_W);
+    _moving = true;
 
     // Accelerate the vehicle if it's moving
     if (_moving)
@@ -47,17 +64,24 @@ void Vehicle::update()
 
     // Temporary controls
     if (IsKeyDown(KEY_A))
-        _rot += _velocity * dt / 1.f;
+        _rot += _velocity * dt / Util::TurnDampening;
     if (IsKeyDown(KEY_D))
-        _rot -= _velocity * dt / 1.f;
+        _rot -= _velocity * dt / Util::TurnDampening;
+
+    _rot = theta;
 
     // Direction as a vector
     Vector3 dir = Vector3RotateByAxisAngle(Vector3UnitZ, Vector3UnitY, _rot);
 
+    // Update position
     _pos -= dir * _velocity * dt;
 
+    // Check if we have reached our target yet
+    if(Vector3Distance(target->getPos(), _pos) < Util::ReachDistance)
+        _path.pop_back();
+
     // Size offset of the model, taking rotation into account
-    Vector3 v = Vector3RotateByAxisAngle(_size / 2, Vector3UnitY, _rot);
+    Vector3 v = Vector3RotateByAxisAngle(_size / 2 + _offset, Vector3UnitY, _rot);
 
     // Update the model's transform
     _model.transform = MatrixRotateY(_rot) * MatrixTranslate(_pos.x - v.x, _pos.y - v.y, _pos.z - v.z);
@@ -70,17 +94,19 @@ void Vehicle::draw(bool debug)
     {
         DrawLine3D(_pos + Vector3(0, 2, 0), _pos + Vector3RotateByAxisAngle(Vector3(0, 2, -5), Vector3UnitY, _rot), BLUE);
 
-        Vector3 max = {_size.x / 2, _size.y / 2, _size.z / 2};
-        Vector3 min = {-_size.x / 2, -_size.y / 2, -_size.z / 2};
+        Vector3 pos = Vector3Transform(Vector3Zeros, _model.transform);
 
-        Vector3 end1    = _pos + Vector3RotateByAxisAngle({max.x, max.y, max.z}, Vector3UnitY, _rot),
-                end2    = _pos + Vector3RotateByAxisAngle({max.x, max.y, min.z}, Vector3UnitY, _rot),
-                end3    = _pos + Vector3RotateByAxisAngle({max.x, min.y, min.z}, Vector3UnitY, _rot),
-                end4    = _pos + Vector3RotateByAxisAngle({max.x, min.y, max.z}, Vector3UnitY, _rot),
-                front1  = _pos + Vector3RotateByAxisAngle({min.x, max.y, max.z}, Vector3UnitY, _rot),
-                front2  = _pos + Vector3RotateByAxisAngle({min.x, max.y, min.z}, Vector3UnitY, _rot),
-                front3  = _pos + Vector3RotateByAxisAngle({min.x, min.y, min.z}, Vector3UnitY, _rot),
-                front4  = _pos + Vector3RotateByAxisAngle({min.x, min.y, max.z}, Vector3UnitY, _rot);
+        Vector3 max = _size / 2;
+        Vector3 min = Vector3Zeros - _size / 2;
+
+        Vector3 end1 = pos + Vector3RotateByAxisAngle({max.x, max.y, max.z}, Vector3UnitY, _rot),
+                end2 = pos + Vector3RotateByAxisAngle({max.x, max.y, min.z}, Vector3UnitY, _rot),
+                end3 = pos + Vector3RotateByAxisAngle({max.x, min.y, min.z}, Vector3UnitY, _rot),
+                end4 = pos + Vector3RotateByAxisAngle({max.x, min.y, max.z}, Vector3UnitY, _rot),
+                front1 = pos + Vector3RotateByAxisAngle({min.x, max.y, max.z}, Vector3UnitY, _rot),
+                front2 = pos + Vector3RotateByAxisAngle({min.x, max.y, min.z}, Vector3UnitY, _rot),
+                front3 = pos + Vector3RotateByAxisAngle({min.x, min.y, min.z}, Vector3UnitY, _rot),
+                front4 = pos + Vector3RotateByAxisAngle({min.x, min.y, max.z}, Vector3UnitY, _rot);
 
         // End face
         DrawLine3D(end1, end2, GREEN);
@@ -120,4 +146,9 @@ float Vehicle::getRotation() const
 Matrix Vehicle::getTransform() const
 {
     return _model.transform;
+}
+
+bool Vehicle::shouldDespawn() const
+{
+    return _despawn;
 }

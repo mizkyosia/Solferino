@@ -10,16 +10,14 @@ class UI
 {
     CustomCamera &_camera;
 
-    bool _simPaused;
-
     bool _showMain, _showAgent, _showNode, _showCamera;
 
-    bool _destroyVehicle, _destroyNode;
+    bool _destroyVehicle = false, _destroyNode = false;
 
 public:
 
-    Node* _selectedNode;
-    Vehicle* _selectedVehicle;
+    Node* selectedNode;
+    Vehicle* selectedVehicle;
 
     UI(CustomCamera &camera);
     ~UI();
@@ -33,8 +31,6 @@ public:
     void nodeMenu();
 
     void debugCamera();
-
-    bool& isSimulationPaused();
 
     Vehicle* destroyedVehicle();
     Node* destroyedNode();

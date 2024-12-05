@@ -3,8 +3,10 @@
 #include <raylib.h>
 #include <raymath.h>
 
+#include <string>
+
 /// @brief Collection of constants relative to the simulation
-namespace Constants
+namespace Util
 {
     const float CameraSpeed = .5f;
     const int BaseZoom = 50;
@@ -16,14 +18,13 @@ namespace Constants
     const float ZoomMin = 20;
     const float CameraMovementSmoothing = .15f;
 
-    const int CarVariantsNb = 2;
-
     const float SecurityDistance = 2;
+    const float ReachDistance = .1f;
 
-    const char Car          = 0b0001;
-    const char Bus          = 0b0010;
-    const char Bike         = 0b0100;
-    const char Pedestrian   = 0b1000;
+    const char Car = 0b0001;
+    const char Bus = 0b0010;
+    const char Bike = 0b0100;
+    const char Pedestrian = 0b1000;
 
     const auto KeyAddNode = KEY_E;
     const auto KeyLinkNode = KEY_Q;
@@ -31,6 +32,25 @@ namespace Constants
     const auto KeyDebugMenu = KEY_F1;
     const auto KeyDebugVehicles = KEY_F2;
     const auto KeyDebugNodes = KEY_F3;
+
+    const auto KeySpawnVehicle = KEY_S;
+
+    const float TurnDampening = 10.f;
+
+    const int CarVariantsNb = 26;
+    inline Model CarModels[CarVariantsNb];
+
+    inline Model Road;
+
+    inline bool SimPaused = false;
+    inline bool DebugNodes = false;
+    inline bool DebugVehicles = false;
+
+    /// @brief Load all models needed by the program
+    void LoadAllModels();
+
+    /// @brief Unloads all models used by the program
+    void UnloadAllModels();
 }
 
 namespace Math
@@ -51,4 +71,10 @@ namespace Math
     /// @param vec
     /// @return
     Vector3 cartesianToSpherical(Vector3 vec);
+
+    /// @brief Returns a random int in the range [min, max[
+    /// @param max 
+    /// @param min 
+    /// @return 
+    int randomRange(int max, int min = 0);
 }

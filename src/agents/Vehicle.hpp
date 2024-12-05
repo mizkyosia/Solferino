@@ -3,8 +3,9 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <thread>
+#include <vector>
 
-#include "pathfinding/Graph.hpp"
+#include "pathfinding/Node.hpp"
 #include "util/Misc.hpp"
 
 class Vehicle
@@ -25,19 +26,20 @@ protected:
 
     /// @brief Can the vehicle move ?
     bool _moving = false;
+    /// @brief Should the vehice despawn next frame ?
+    bool _despawn = false;
 
     /// @brief Position of the vehicle in 3D space
     Vector3 _pos;
+    /// @brief Model's offset. The vehicles might not be 100% aligned with the origin, so we have to account for that in order to display them properly
+    Vector3 _offset;
     /// @brief Model used by the vehicle
     Model _model;
     /// @brief Path of nodes the vehicle must take
-    std::queue<Node *> _path;
+    std::vector<Node *> _path;
 
     /// @brief The thread of this vehicle. The vehicle does not exist only within the thread, but all of its actions must be performed within it
     // std::thread _t;
-
-    /// @brief Is the simulation paused ? Using a shared reference so that pauses can be done through all threads
-    bool *_paused;
 
     /// @brief Variable representing the bounds of this vehicle type's sprite
     Vector3 _size;
@@ -51,8 +53,8 @@ protected:
 
 public:
 
-    Vehicle(const float &x, const float &y, const float &initialRotation, bool &paused, const Model &model);
-    ~Vehicle();
+    Vehicle(const float &x, const float &y, const float &initialRotation, std::vector<Node *> path, const Model &model);
+    virtual ~Vehicle();
 
     /// @brief Updates the vehicle : calculates new acceleration, velocity, position, direction...
     virtual void update();
@@ -76,6 +78,10 @@ public:
     /// @brief Returns the full transform matrix of the vehicle
     /// @return 
     Matrix getTransform() const;
+
+    /// @brief Returns if the node should despawn
+    /// @return 
+    bool shouldDespawn() const;
 
     /// @brief Adds the UI class as friend, allowing for use of otherwise private fields
     friend class UI;

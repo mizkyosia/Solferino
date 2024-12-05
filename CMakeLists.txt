@@ -49,9 +49,11 @@ add_executable(Solferino
 
 # Compil options
 set_property(TARGET Solferino PROPERTY CXX_STANDARD 20)
-target_compile_options(Solferino PRIVATE -Wall)
+target_compile_options(Solferino PUBLIC -Wall -no-pie)
 
+# Sets the rlImGui library & adds raylib as its dependency
 add_library(rlImGui STATIC ${RLIMGUI_SOURCES})
+target_link_libraries(rlImGui raylib)
 
 target_link_libraries(Solferino PRIVATE raylib imgui)
 

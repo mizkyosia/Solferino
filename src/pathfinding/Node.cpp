@@ -1,10 +1,10 @@
 #include "Node.hpp"
 
-Node::Node(unsigned long id, const float &x, const float &z) : _pos((Vector3){x, 0, z}), _id(id)
+Node::Node(const float &x, const float &z) : _pos((Vector3){x, 0, z}), _col(YELLOW)
 {
 }
 
-Node::Node(const Vector3 &pos, unsigned long id) : _pos(pos), _id(id)
+Node::Node(const Vector3 &pos) : _pos(pos), _col(YELLOW)
 {
     _pos.y = 0;
 }
@@ -13,45 +13,25 @@ Node::~Node()
 {
 }
 
-void Node::link(Node &node)
+void Node::link(Node *node)
 {
-    TraceLog(LOG_WARNING,"Inserting pointer to node : %x", &node);
-    if (!isLinked(node))
-        _links.insert(&node);
+    if (node != this && !isLinked(node))
+        _links.insert(node);
 }
 
-bool Node::unlink(Node &node)
+bool Node::unlink(Node *node)
 {
-    TraceLog(LOG_WARNING, "Unlinking node pointer for a node : %x", &node);
-    if (_links.contains(&node))
+    if (_links.contains(node))
     {
-        TraceLog(LOG_WARNING, "UNLINKED NODE !!!!!!!");
-        _links.erase(&node);
+        _links.erase(node);
         return true;
     }
     return false;
 }
 
-bool Node::isLinked(Node &node) const
+bool Node::isLinked(Node *node) const
 {
-    for (auto i : _links)
-    {
-        // If the two nodes share the same memory adress, they are one and the same
-        if (i == &node)
-            return true;
-    }
-    return false;
-}
-
-std::optional<Node *> Node::getLink(Node &node) const
-{
-    for (auto i : _links)
-    {
-        // If the two nodes share the same memory adress, they are one and the same
-        if (i == &node)
-            return std::optional(i);
-    }
-    return std::nullopt;
+    return _links.contains(node);
 }
 
 std::set<Node *> Node::getAllLinks() const
@@ -64,17 +44,27 @@ bool Node::isBlocked() const
     return false;
 }
 
+bool Node::allowsVehicle(char vehicleType) const
+{
+    return _allowedVehicles & vehicleType;
+}
+
 Color Node::getColor()
 {
     return _col;
 }
 
+bool Node::isStart()
+{
+    return _start;
+}
+
+bool Node::isEnd()
+{
+    return _end;
+}
+
 Vector3 Node::getPos() const
 {
     return _pos;
-}
-
-bool Node::operator==(const Node &other) const
-{
-    return other._id == _id;
 }

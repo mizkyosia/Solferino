@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Vehicle.hpp"
 
 class Car : public Vehicle
@@ -11,6 +13,6 @@ class Car : public Vehicle
 
 public:
     
-    Car(const float &x, const float &y, const float &initialRotation, bool &paused, const Model &model);
+    Car(const float &x, const float &y, const float &initialRotation, std::vector<Node *> path);
     ~Car();
 };

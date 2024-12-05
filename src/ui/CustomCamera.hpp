@@ -25,17 +25,9 @@ private:
     /// @brief Safe reference to the graph of the simulation
     Graph& _graph;
 
-    /// @brief Safe reference to the ground mesh
-    Model& _ground;
-
-    bool& _nodeDebug;
-    
-    /// @brief Safe reference to the vehicles of the simulation
-    std::vector<Vehicle>& _vehicles;
-
     friend class UI;
 public:
-    CustomCamera(Graph& graph, std::vector<Vehicle>& vehicles, Model& ground, bool& nodeDebug);
+    CustomCamera(Graph& graph);
     ~CustomCamera();
 
     void update(float dt);
