@@ -17,8 +17,6 @@
 
 using namespace std;
 
-Graph graph;
-
 vector<Vehicle *> toDespawn;
 
 int main(int argc, char *argv[])
@@ -35,8 +33,8 @@ int main(int argc, char *argv[])
     SetTargetFPS(144);
     rlImGuiSetup(true);
 
+    Graph graph;
     CustomCamera camera(graph);
-
     UI Ui(camera);
 
     // Shader testShader = LoadShader("assets/shaders/test.vs", "assets/shaders/test.fs");
@@ -66,7 +64,7 @@ int main(int argc, char *argv[])
             Util::DebugNodes = !Util::DebugNodes;
 
         if (IsKeyPressed(Util::KeySpawnVehicle))
-            graph.spawnVehicle();
+            graph.spawnVehicle(Util::VehicleType::Car);
 
         // Start the OpenGL drawing context
         BeginTextureMode(world);

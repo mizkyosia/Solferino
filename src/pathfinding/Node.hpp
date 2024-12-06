@@ -7,6 +7,8 @@
 #include <raymath.h>
 #include <string>
 
+#include "util/Misc.hpp"
+
 enum NodeType
 {
     Start,
@@ -31,13 +33,13 @@ private:
     Color _col;
 
     /// @brief Bitfield of allowed vehicle types
-    char _allowedVehicles;
+    Util::VehicleType _allowedVehicles;
 
 public:
     constexpr static float radius = 1;
 
     Node(const float &x = 0, const float &y = 0);
-    Node(const Vector3 &pos);
+    Node(const Vector3 &pos, bool start = false, bool end = false, Util::VehicleType allowedVehicles = Util::VehicleType::Car, Color color = YELLOW);
     ~Node();
 
     /// @brief Adds a connection from the current node to another
@@ -66,7 +68,7 @@ public:
     /// @brief Checks if the node accepts this vehicle type
     /// @param vehicleType
     /// @return
-    bool allowsVehicle(char vehicleType) const;
+    bool allowsVehicle(Util::VehicleType vehicleType) const;
 
     /// @brief Gets the debug color of this node
     /// @return

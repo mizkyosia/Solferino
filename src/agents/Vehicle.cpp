@@ -22,6 +22,8 @@ Vehicle::Vehicle(const float &x,
 
     _offset = bbox.min;
 
+    if(path.size() > 0) _pos = path.back()->getPos();
+
     TraceLog(LOG_INFO, "Spawned vehicle with size : %f, %f, %f and offset : %f, %f, %f ", _size.x, _size.y, _size.z, _offset.x, _offset.y, _offset.z);
 }
 
@@ -63,10 +65,10 @@ void Vehicle::update()
     _velocity = std::clamp(_velocity, 0.f, _maxSpeed);
 
     // Temporary controls
-    if (IsKeyDown(KEY_A))
-        _rot += _velocity * dt / Util::TurnDampening;
-    if (IsKeyDown(KEY_D))
-        _rot -= _velocity * dt / Util::TurnDampening;
+    // if (IsKeyDown(KEY_A))
+    //     _rot += _velocity * dt / Util::TurnDampening;
+    // if (IsKeyDown(KEY_D))
+    //     _rot -= _velocity * dt / Util::TurnDampening;
 
     _rot = theta;
 

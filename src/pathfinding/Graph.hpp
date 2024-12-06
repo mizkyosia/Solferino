@@ -20,7 +20,7 @@ public:
 
     /// @brief Adds a node to the graph at the given position
     /// @param pos 
-    void addNode(Vector3 pos);
+    Node* addNode(Vector3 pos, bool start = false, bool end = false, Util::VehicleType allowedVehicles = Util::VehicleType::Car, Color color = YELLOW);
 
     /// @brief Removes a node from the graph, along with all of its links towards other nodes
     /// @param node
@@ -43,7 +43,7 @@ public:
     unsigned int vehicleCount();
 
     /// @brief Spawns a new vehicle, and gives it a path to follow
-    void spawnVehicle();
+    void spawnVehicle(Util::VehicleType kind);
 
     /// @brief Despawns a vehicle, removing from both the graph and memory
     /// @param vehicle 
@@ -54,5 +54,5 @@ public:
     /// @param to
     /// @param vehicleType
     /// @return
-    std::vector<Node *> findPath(Node *from, Node *to, const char vehicleType) const;
+    std::vector<Node *> findPath(Node *from, Node *to, const Util::VehicleType vehicleType) const;
 };

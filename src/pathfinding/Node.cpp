@@ -4,7 +4,7 @@ Node::Node(const float &x, const float &z) : _pos((Vector3){x, 0, z}), _col(YELL
 {
 }
 
-Node::Node(const Vector3 &pos) : _pos(pos), _col(YELLOW)
+Node::Node(const Vector3 &pos, bool start, bool end, Util::VehicleType allowedVehicles, Color color) : _pos(pos), _start(start), _end(end), _col(color), _allowedVehicles(allowedVehicles)
 {
     _pos.y = 0;
 }
@@ -44,9 +44,9 @@ bool Node::isBlocked() const
     return false;
 }
 
-bool Node::allowsVehicle(char vehicleType) const
+bool Node::allowsVehicle(Util::VehicleType vehicleType) const
 {
-    return _allowedVehicles & vehicleType;
+    return (_allowedVehicles & vehicleType) != Util::VehicleType::None;
 }
 
 Color Node::getColor()

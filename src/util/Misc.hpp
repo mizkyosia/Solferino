@@ -19,12 +19,7 @@ namespace Util
     const float CameraMovementSmoothing = .15f;
 
     const float SecurityDistance = 2;
-    const float ReachDistance = .1f;
-
-    const char Car = 0b0001;
-    const char Bus = 0b0010;
-    const char Bike = 0b0100;
-    const char Pedestrian = 0b1000;
+    const float ReachDistance = .4f;
 
     const auto KeyAddNode = KEY_E;
     const auto KeyLinkNode = KEY_Q;
@@ -39,6 +34,25 @@ namespace Util
 
     const int CarVariantsNb = 26;
     inline Model CarModels[CarVariantsNb];
+
+    enum class VehicleType : char
+    {
+        None = 0b0000,
+        Car = 0b0001,
+        Bus = 0b0010,
+        Pedestrian = 0b0100,
+        Bike = 0b1000,
+    };
+
+    inline VehicleType operator|(VehicleType a, VehicleType b)
+    {
+        return static_cast<VehicleType>(static_cast<char>(a) | static_cast<char>(b));
+    }
+
+    inline VehicleType operator&(VehicleType a, VehicleType b)
+    {
+        return static_cast<VehicleType>(static_cast<char>(a) & static_cast<char>(b));
+    }
 
     inline Model Road;
 
@@ -73,8 +87,8 @@ namespace Math
     Vector3 cartesianToSpherical(Vector3 vec);
 
     /// @brief Returns a random int in the range [min, max[
-    /// @param max 
-    /// @param min 
-    /// @return 
+    /// @param max
+    /// @param min
+    /// @return
     int randomRange(int max, int min = 0);
 }
