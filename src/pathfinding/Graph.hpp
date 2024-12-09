@@ -2,6 +2,8 @@
 
 #include "Node.hpp"
 #include "agents/Vehicle.hpp"
+#include "agents/TrafficLights.hpp"
+
 #include <set>
 #include <queue>
 #include <vector>
@@ -14,8 +16,10 @@ private:
 
     std::set<Vehicle *> _vehicles;
 
+    TrafficLightController& _trafficLights;
+
 public:
-    Graph();
+    Graph(TrafficLightController& trafficLights);
     ~Graph();
 
     /// @brief Adds a node to the graph at the given position

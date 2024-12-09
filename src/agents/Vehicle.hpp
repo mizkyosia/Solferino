@@ -7,6 +7,13 @@
 
 #include "pathfinding/Node.hpp"
 #include "util/Misc.hpp"
+#include "TrafficLights.hpp"
+
+enum class VehicleState {
+    Accelerating,
+    Slowing,
+    Braking
+};
 
 class Vehicle
 {
@@ -25,7 +32,7 @@ protected:
     float _lastUpdateTime;
 
     /// @brief Can the vehicle move ?
-    bool _moving = false;
+    VehicleState _state = VehicleState::Slowing;
     /// @brief Should the vehice despawn next frame ?
     bool _despawn = false;
 
@@ -37,9 +44,13 @@ protected:
     Model _model;
     /// @brief Path of nodes the vehicle must take
     std::vector<Node *> _path;
+    /// @brief Safe reference to the vehicles of the simulation
+    std::set<Vehicle*> & _vehicles;
+    /// @brief Safe reference to the traffic lights & hitboxes
+    TrafficLightController& _trafficLights;
 
     /// @brief The thread of this vehicle. The vehicle does not exist only within the thread, but all of its actions must be performed within it
-    // std::thread _t;
+    std::thread _t;
 
     /// @brief Variable representing the bounds of this vehicle type's sprite
     Vector3 _size;
@@ -53,7 +64,7 @@ protected:
 
 public:
 
-    Vehicle(const float &x, const float &y, const float &initialRotation, std::vector<Node *> path, const Model &model);
+    Vehicle(const float &x, const float &y, const float &initialRotation, std::set<Vehicle*> &vehicles, TrafficLightController &trafficLights, std::vector<Node *> path, const Model &model);
     virtual ~Vehicle();
 
     /// @brief Updates the vehicle : calculates new acceleration, velocity, position, direction...
@@ -82,6 +93,9 @@ public:
     /// @brief Returns if the node should despawn
     /// @return 
     bool shouldDespawn() const;
+
+    /// @brief Checks if the vehcle has had any collision, or if it has detected another vehicle in its path
+    void checkCollisions();
 
     /// @brief Adds the UI class as friend, allowing for use of otherwise private fields
     friend class UI;

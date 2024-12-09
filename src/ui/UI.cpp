@@ -89,12 +89,9 @@ void UI::agentMenu()
         ImGui::Text("Velocity : current=%f, max=%f", selectedVehicle->_velocity, selectedVehicle->_maxSpeed);
 
         ImGui::BeginChild("Path", ImVec2(0, 0), ImGuiChildFlags_Border);
-        for(auto i : selectedVehicle->_path)
+        for (auto i : selectedVehicle->_path)
         {
-            ImGui::TextColored(ImVec4(i->_col.r / 255.f, i->_col.g / 255.f, i->_col.b / 255.f, i->_col.a / 255.f), "Node : dist=%f", Vector2Distance({selectedNode->_pos.x, selectedNode->_pos.z}, {i->_pos.x, i->_pos.z}));
-            ImGui::SameLine();
-            if (ImGui::Button(TextFormat("Remove##%x", i)))
-                TraceLog(LOG_WARNING, "Should remove node from path");
+            ImGui::TextColored(ImVec4(i->_col.r / 255.f, i->_col.g / 255.f, i->_col.b / 255.f, i->_col.a / 255.f), "Node : angle=%f", atan2f(selectedVehicle->_pos.x - i->_pos.x, selectedVehicle->_pos.z - i->_pos.z));
         }
         ImGui::EndChild();
     }

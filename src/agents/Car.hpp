@@ -13,6 +13,6 @@ class Car : public Vehicle
 
 public:
     
-    Car(const float &x, const float &y, const float &initialRotation, std::vector<Node *> path);
+    Car(const float &x, const float &y, const float &initialRotation, std::set<Vehicle*> &vehicles, TrafficLightController& trafficLights, std::vector<Node *> path);
     ~Car();
 };

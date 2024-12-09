@@ -7,14 +7,18 @@ using namespace std::chrono;
 Vehicle::Vehicle(const float &x,
                  const float &y,
                  const float &initialRotation,
+                 std::set<Vehicle *> &vehicles,
+                 TrafficLightController &trafficLights,
                  std::vector<Node *> path,
                  const Model &model) : _velocity(0),
                                        _acceleration(0),
                                        _rot(initialRotation),
-                                       _moving(true),
-                                       _pos((Vector3){x, y, 0.f}),
+                                       _pos((Vector3){x, 0.f, y}),
                                        _model(model),
-                                       _path(path)
+                                       _path(path),
+                                       _vehicles(vehicles),
+                                       _trafficLights(trafficLights),
+                                       _t{}
 {
     auto bbox = GetModelBoundingBox(_model);
     _size = (bbox.max - bbox.min);
@@ -22,18 +26,38 @@ Vehicle::Vehicle(const float &x,
 
     _offset = bbox.min;
 
-    if(path.size() > 0) _pos = path.back()->getPos();
+    if (path.size() > 1)
+    {
+        _pos = path.back()->getPos();
+        auto diff = _pos - path[path.size() - 2]->getPos();
+        _rot = atan2f(diff.x, diff.z);
+    }
 
-    TraceLog(LOG_INFO, "Spawned vehicle with size : %f, %f, %f and offset : %f, %f, %f ", _size.x, _size.y, _size.z, _offset.x, _offset.y, _offset.z);
+    _t = std::thread
+    {
+        [&] {
+            while (!this->shouldDespawn())
+            {
+                this->update();
+            }
+            
+        }
+    };
+
+    TraceLog(LOG_INFO, "Spawned vehicle with size : %f, %f, %f and offset : %f, %f, %f", _size.x, _size.y, _size.z, _offset.x, _offset.y, _offset.z);
 }
 
 Vehicle::~Vehicle()
 {
+    // Wait for the thread to end, then destroy it
+    _despawn = true;
+    _t.join();
 }
 
 void Vehicle::update()
 {
-    if(_path.size() == 0) {
+    if (_path.size() == 0)
+    {
         _despawn = true;
         return;
     }
@@ -42,6 +66,8 @@ void Vehicle::update()
     auto newTime = GetTime();
     float dt = newTime - _lastUpdateTime;
     _lastUpdateTime = newTime;
+
+    checkCollisions();
 
     // If the simulation is paused, don't do anything
     // Same if we don't have any nodes to follow
@@ -54,23 +80,17 @@ void Vehicle::update()
     const float theta = atan2f(target_dir.x, target_dir.z);
 
     // _moving = IsKeyDown(KEY_W);
-    _moving = true;
 
-    // Accelerate the vehicle if it's moving
-    if (_moving)
+    if (_state == VehicleState::Accelerating)
         _velocity += _acceleration * dt;
-    // Decelerate the vehicle if not
+    else if (_state == VehicleState::Braking)
+        _velocity -= dt * Util::BrakeStrength;
     else
-        _velocity -= _weight * dt;
+        _velocity -= _velocity * .5f * dt;
+
     _velocity = std::clamp(_velocity, 0.f, _maxSpeed);
 
-    // Temporary controls
-    // if (IsKeyDown(KEY_A))
-    //     _rot += _velocity * dt / Util::TurnDampening;
-    // if (IsKeyDown(KEY_D))
-    //     _rot -= _velocity * dt / Util::TurnDampening;
-
-    _rot = theta;
+    _rot = Math::lerpRadians(_rot, theta, _velocity * dt / 2.f);
 
     // Direction as a vector
     Vector3 dir = Vector3RotateByAxisAngle(Vector3UnitZ, Vector3UnitY, _rot);
@@ -79,7 +99,7 @@ void Vehicle::update()
     _pos -= dir * _velocity * dt;
 
     // Check if we have reached our target yet
-    if(Vector3Distance(target->getPos(), _pos) < Util::ReachDistance)
+    if (Vector3Distance(target->getPos(), _pos) < Util::ReachDistance)
         _path.pop_back();
 
     // Size offset of the model, taking rotation into account
@@ -94,39 +114,11 @@ void Vehicle::draw(bool debug)
     DrawModel(_model, Vector3Zeros, 1, WHITE);
     if (debug)
     {
-        DrawLine3D(_pos + Vector3(0, 2, 0), _pos + Vector3RotateByAxisAngle(Vector3(0, 2, -5), Vector3UnitY, _rot), BLUE);
+        DrawLine3D(_pos, _pos + Vector3RotateByAxisAngle(Vector3(0, 0, -5), Vector3UnitY, _rot), BLUE);
 
-        Vector3 pos = Vector3Transform(Vector3Zeros, _model.transform);
-
-        Vector3 max = _size / 2;
-        Vector3 min = Vector3Zeros - _size / 2;
-
-        Vector3 end1 = pos + Vector3RotateByAxisAngle({max.x, max.y, max.z}, Vector3UnitY, _rot),
-                end2 = pos + Vector3RotateByAxisAngle({max.x, max.y, min.z}, Vector3UnitY, _rot),
-                end3 = pos + Vector3RotateByAxisAngle({max.x, min.y, min.z}, Vector3UnitY, _rot),
-                end4 = pos + Vector3RotateByAxisAngle({max.x, min.y, max.z}, Vector3UnitY, _rot),
-                front1 = pos + Vector3RotateByAxisAngle({min.x, max.y, max.z}, Vector3UnitY, _rot),
-                front2 = pos + Vector3RotateByAxisAngle({min.x, max.y, min.z}, Vector3UnitY, _rot),
-                front3 = pos + Vector3RotateByAxisAngle({min.x, min.y, min.z}, Vector3UnitY, _rot),
-                front4 = pos + Vector3RotateByAxisAngle({min.x, min.y, max.z}, Vector3UnitY, _rot);
-
-        // End face
-        DrawLine3D(end1, end2, GREEN);
-        DrawLine3D(end3, end2, GREEN);
-        DrawLine3D(end3, end4, GREEN);
-        DrawLine3D(end1, end4, GREEN);
-
-        // Front face
-        DrawLine3D(front1, front2, GREEN);
-        DrawLine3D(front3, front2, GREEN);
-        DrawLine3D(front3, front4, GREEN);
-        DrawLine3D(front1, front4, GREEN);
-
-        // Sides
-        DrawLine3D(end1, front1, GREEN);
-        DrawLine3D(end2, front2, GREEN);
-        DrawLine3D(end3, front3, GREEN);
-        DrawLine3D(end4, front4, GREEN);
+        Util::DrawOBB(_pos, _size, _rot, _state == VehicleState::Accelerating ? GREEN : RED);
+        Util::DrawOBB(_pos + Vector3RotateByAxisAngle({0, 0, -(_size.z + Util::WarnBoxSize.z) / 2.f}, Vector3UnitY, _rot), Util::WarnBoxSize, _rot, BLUE);
+        Util::DrawOBB(_pos + Vector3RotateByAxisAngle({0, 0, -(_size.z + Util::BrakeBoxSize.z) / 2.f}, Vector3UnitY, _rot), Util::BrakeBoxSize, _rot, ORANGE);
     }
 }
 
@@ -153,4 +145,68 @@ Matrix Vehicle::getTransform() const
 bool Vehicle::shouldDespawn() const
 {
     return _despawn;
+}
+
+void Vehicle::checkCollisions()
+{
+    auto temp = VehicleState::Accelerating;
+
+    Vector2 pos2d = {_pos.x, _pos.z},
+            size2d = {_size.x, _size.z},
+            warnPos = pos2d + Vector2Rotate({0, -(_size.z + Util::WarnBoxSize.z) / 2.f}, -_rot),
+            warnSize = {Util::WarnBoxSize.x, Util::WarnBoxSize.z},
+            brakePos = pos2d + Vector2Rotate({0, -(_size.z + Util::BrakeBoxSize.z) / 2.f}, -_rot),
+            brakeSize = {Util::WarnBoxSize.x, Util::BrakeBoxSize.z},
+            ax = Vector2Normalize(Vector2Rotate(Vector2UnitX, -_rot)),
+            ay = Vector2Normalize(Vector2Rotate(Vector2UnitY, -_rot));
+
+    // We're using the Separating axis theorem, and applying it to 2d oriented bounding boxes here
+    for (auto v : _vehicles)
+    {
+        if (v == this)
+            continue;
+
+        // Checks if a vehicle is in front of this one
+        if (Math::boxCollision(warnPos, warnSize, ax, ay, {v->_pos.x, v->_pos.z}, {v->_size.x, v->_size.z}, v->_rot))
+        {
+            // If it's close enough, emergency brake
+            if (Math::boxCollision(brakePos, brakeSize, ax, ay, {v->_pos.x, v->_pos.z}, {v->_size.x, v->_size.z}, v->_rot))
+                temp = VehicleState::Braking;
+            else
+                temp = VehicleState::Slowing;
+        }
+        else
+        {
+            Vector2 colPos = (Vector2){v->_pos.x, v->_pos.z} + Vector2Rotate({0, -(v->_size.z + Util::WarnBoxSize.z) / 2.f}, -v->_rot),
+                    vy = Vector2Normalize(Vector2Rotate(Vector2UnitY, -v->_rot)),
+                    dy = vy - ay;
+
+            float angle = Vector2Angle(dy, ay);
+
+            TraceLog(LOG_WARNING, "Angle : %f", angle);
+
+            // Handles right priority
+            if (Math::boxCollision(warnPos, warnSize, ax, ay, colPos, warnSize, v->_rot) && v->_state == VehicleState::Accelerating && angle < 0)
+            {
+                // If we're too close, emergency brake
+                if (Math::boxCollision(brakePos, brakeSize, ax, ay, colPos, warnSize, v->_rot))
+                    temp = VehicleState::Braking;
+                else
+                    temp = VehicleState::Slowing;
+            }
+        }
+    }
+    for (auto l : _trafficLights.getRef())
+    {
+        // Checks if we're approaching a traffic light
+        if (l->active && Math::boxCollision(warnPos, warnSize, ax, ay, l->position, l->size, 0))
+        {
+            // If we're too close, emergency braking
+            if (l->active && Math::boxCollision(brakePos, brakeSize, ax, ay, l->position, l->size, 0))
+                temp = VehicleState::Braking;
+            else
+                temp = VehicleState::Slowing;
+        }
+    }
+    _state = temp;
 }

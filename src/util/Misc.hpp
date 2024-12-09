@@ -19,7 +19,8 @@ namespace Util
     const float CameraMovementSmoothing = .15f;
 
     const float SecurityDistance = 2;
-    const float ReachDistance = .4f;
+    const float ReachDistance = 2.f;
+    const float BrakeStrength = 20;
 
     const auto KeyAddNode = KEY_E;
     const auto KeyLinkNode = KEY_Q;
@@ -31,6 +32,9 @@ namespace Util
     const auto KeySpawnVehicle = KEY_S;
 
     const float TurnDampening = 10.f;
+
+    const Vector3 WarnBoxSize = {2, 2, 4};
+    const Vector3 BrakeBoxSize = {2, 2, 2};
 
     const int CarVariantsNb = 26;
     inline Model CarModels[CarVariantsNb];
@@ -65,6 +69,8 @@ namespace Util
 
     /// @brief Unloads all models used by the program
     void UnloadAllModels();
+
+    void DrawOBB(Vector3 pos, Vector3 size, float angleY, Color color);
 }
 
 namespace Math
@@ -91,4 +97,22 @@ namespace Math
     /// @param min
     /// @return
     int randomRange(int max, int min = 0);
+
+    /// @brief Linear interpolation for an angle
+    /// @param a 
+    /// @param b 
+    /// @param lerpFactor 
+    /// @return 
+    float lerpRadians(float a, float b, float lerpFactor);
+
+    /// @brief Uses the "Separating axis theorem" to determine if two oriented bounding boxes A and B are colliding
+    /// @param posA Position of the first hitbox
+    /// @param sizeA Size of the first hitbox
+    /// @param ax X-Axis relative to box A
+    /// @param ay Y-Axis relative to box A
+    /// @param posB Position of the second hitbox
+    /// @param sizeB Size of the second hitbox
+    /// @param rotB Rotation of the second hitbox
+    /// @return 
+    bool boxCollision(Vector2 posA, Vector2 sizeA, Vector2 ax, Vector2 ay, Vector2 posB, Vector2 sizeB, float rotB);
 }

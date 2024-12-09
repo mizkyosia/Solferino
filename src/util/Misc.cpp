@@ -61,6 +61,38 @@ namespace Util
 
         TraceLog(LOG_INFO, "Unloaded all models");
     }
+    void DrawOBB(Vector3 pos, Vector3 size, float angleY, Color color)
+    {
+        Vector3 max = size / 2;
+        Vector3 min = Vector3Zeros - size / 2;
+
+        Vector3 end1 = pos + Vector3RotateByAxisAngle({max.x, max.y, max.z}, Vector3UnitY, angleY),
+                end2 = pos + Vector3RotateByAxisAngle({max.x, max.y, min.z}, Vector3UnitY, angleY),
+                end3 = pos + Vector3RotateByAxisAngle({max.x, min.y, min.z}, Vector3UnitY, angleY),
+                end4 = pos + Vector3RotateByAxisAngle({max.x, min.y, max.z}, Vector3UnitY, angleY),
+                front1 = pos + Vector3RotateByAxisAngle({min.x, max.y, max.z}, Vector3UnitY, angleY),
+                front2 = pos + Vector3RotateByAxisAngle({min.x, max.y, min.z}, Vector3UnitY, angleY),
+                front3 = pos + Vector3RotateByAxisAngle({min.x, min.y, min.z}, Vector3UnitY, angleY),
+                front4 = pos + Vector3RotateByAxisAngle({min.x, min.y, max.z}, Vector3UnitY, angleY);
+
+        // End face
+        DrawLine3D(end1, end2, color);
+        DrawLine3D(end3, end2, color);
+        DrawLine3D(end3, end4, color);
+        DrawLine3D(end1, end4, color);
+
+        // Front face
+        DrawLine3D(front1, front2, color);
+        DrawLine3D(front3, front2, color);
+        DrawLine3D(front3, front4, color);
+        DrawLine3D(front1, front4, color);
+
+        // Sides
+        DrawLine3D(end1, front1, color);
+        DrawLine3D(end2, front2, color);
+        DrawLine3D(end3, front3, color);
+        DrawLine3D(end4, front4, color);
+    }
 }
 
 namespace Math
@@ -88,6 +120,59 @@ namespace Math
     }
     int randomRange(int max, int min)
     {
-        return rand()%(max-min + 1) + min;
+        return rand() % (max - min + 1) + min;
+    }
+    float lerpRadians(float a, float b, float lerpFactor) // Lerps from angle a to b (both between 0.f and PI_TIMES_TWO), taking the shortest path
+    {
+        float result;
+        float diff = b - a;
+        if (diff < -PI)
+        {
+            // lerp upwards past PI_TIMES_TWO
+            b += 2 * PI;
+            result = Lerp(a, b, lerpFactor);
+            if (result >= 2 * PI)
+            {
+                result -= 2 * PI;
+            }
+        }
+        else if (diff > PI)
+        {
+            // lerp downwards past 0
+            b -= 2 * PI;
+            result = Lerp(a, b, lerpFactor);
+            if (result < 0.f)
+            {
+                result += 2 * PI;
+            }
+        }
+        else
+        {
+            // straight lerp
+            result = Lerp(a, b, lerpFactor);
+        }
+
+        return result;
+    }
+    bool boxCollision(Vector2 posA, Vector2 sizeA, Vector2 ax, Vector2 ay, Vector2 posB, Vector2 sizeB, float rotB)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            Vector2 diff = {posA.x - posB.x, posA.y - posB.y},
+                    bx = Vector2Normalize(Vector2Rotate(Vector2UnitX, -rotB)),
+                    bz = Vector2Normalize(Vector2Rotate(Vector2UnitY, -rotB)),
+                    axes[4] = {ax, ay, bx, bz};
+
+            // Projecting the half-sizes of the boxes onto the given axis, as well as the vector difference between those boxes
+            float projA = abs(Vector2DotProduct(ax * sizeA.x / 2, axes[i])) + abs(Vector2DotProduct(ay * sizeA.y / 2, axes[i])),
+                  projB = abs(Vector2DotProduct(bx * sizeB.x / 2, axes[i])) + abs(Vector2DotProduct(bz * sizeB.y / 2, axes[i])),
+                  dist = abs(Vector2DotProduct(diff, axes[i]));
+
+            // If the projected distance is more than the projected half-sizes, then the boxes can't possibly touch
+            if (dist > projA + projB)
+                return false;
+        }
+
+        return true;
     }
 }

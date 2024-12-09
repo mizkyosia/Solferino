@@ -1,7 +1,7 @@
 #include "Graph.hpp"
 #include "agents/Car.hpp"
 
-Graph::Graph()
+Graph::Graph(TrafficLightController& trafficLights) : _trafficLights(trafficLights)
 {
     // End nodes
     Node *ends[6] = {
@@ -24,74 +24,52 @@ Graph::Graph()
     };
 
     // First intersection
-    Node *inter1[6] = {
-        addNode(Vector3(22.5f, 0, 8.5f)),
-        addNode(Vector3(17.5f, 0, 8.5f)),
-        addNode(Vector3(24.5f, 0, 15.5f)),
-        addNode(Vector3(24.5f, 0, 10.5f)),
-        addNode(Vector3(15.5f, 0, 10.5f)),
-        addNode(Vector3(15.5f, 0, 15.5f)),
-    };
-
-    // Between the two
-    Node *pass[2] = {
-        addNode(Vector3(17.5f, 0, 20), false, false, Util::VehicleType::Car, PURPLE),
-        addNode(Vector3(22.5f, 0, 20), false, false, Util::VehicleType::Car, PURPLE),
-    };
-
-    // Second intersection
-    Node *inter2[6] = {
-        addNode(Vector3(22.5f, 0, 31.5f)),
-        addNode(Vector3(17.5f, 0, 31.5f)),
-        addNode(Vector3(24.5f, 0, 24.5f)),
-        addNode(Vector3(24.5f, 0, 29.5f)),
-        addNode(Vector3(15.5f, 0, 29.5f)),
-        addNode(Vector3(15.5f, 0, 24.5f)),
+    Node *inter[8] = {
+        addNode(Vector3(22.5f, 0, 10.5f)),
+        addNode(Vector3(17.5f, 0, 10.5f)),
+        addNode(Vector3(22.5f, 0, 15.5f)),
+        addNode(Vector3(17.5f, 0, 15.5f)),
+        addNode(Vector3(22.5f, 0, 24.5f)),
+        addNode(Vector3(17.5f, 0, 24.5f)),
+        addNode(Vector3(22.5f, 0, 29.5f)),
+        addNode(Vector3(17.5f, 0, 29.5f)),
     };
 
     for (int i = 0; i < 6; i++)
     {
-        Node *endTarget = inter1[0], *startTarget = inter1[0];
-        for (int j = 0; j < 6; j++)
+        Node *endTarget = inter[0], *startTarget = inter[0];
+        for (int j = 0; j < 8; j++)
         {
-            if (Vector3Distance(inter1[j]->getPos(), starts[i]->getPos()) < Vector3Distance(startTarget->getPos(), starts[i]->getPos()))
-                startTarget = inter1[j];
-            if (Vector3Distance(inter2[j]->getPos(), starts[i]->getPos()) < Vector3Distance(startTarget->getPos(), starts[i]->getPos()))
-                startTarget = inter2[j];
+            if (Vector3Distance(inter[j]->getPos(), starts[i]->getPos()) < Vector3Distance(startTarget->getPos(), starts[i]->getPos()))
+                startTarget = inter[j];
 
-            if (Vector3Distance(inter1[j]->getPos(), ends[i]->getPos()) < Vector3Distance(endTarget->getPos(), ends[i]->getPos()))
-                endTarget = inter1[j];
-            if (Vector3Distance(inter2[j]->getPos(), ends[i]->getPos()) < Vector3Distance(endTarget->getPos(), ends[i]->getPos()))
-                endTarget = inter2[j];
+            if (Vector3Distance(inter[j]->getPos(), ends[i]->getPos()) < Vector3Distance(endTarget->getPos(), ends[i]->getPos()))
+                endTarget = inter[j];
         }
 
         starts[i]->link(startTarget);
         endTarget->link(ends[i]);
     }
 
-    inter2[5]->link(inter2[1]);
-    inter2[5]->link(inter2[2]);
-    inter2[5]->link(pass[1]);
+    inter[2]->link(inter[0]);
+    inter[2]->link(inter[3]);
+    inter[1]->link(inter[3]);
+    inter[3]->link(inter[5]);
 
-    inter2[0]->link(inter2[2]);
-    inter2[0]->link(pass[1]);
-
-    pass[0]->link(inter2[1]);
-    pass[0]->link(inter2[2]);
-
-    inter1[2]->link(inter1[5]);
-    inter1[2]->link(inter1[0]);
-    inter1[2]->link(pass[0]);
-
-    inter1[1]->link(inter1[5]);
-    inter1[1]->link(pass[0]);
-
-    pass[1]->link(inter1[5]);
-    pass[1]->link(inter1[0]);
+    inter[5]->link(inter[4]);
+    inter[5]->link(inter[7]);
+    inter[6]->link(inter[4]);
+    inter[4]->link(inter[2]);
 }
 
 Graph::~Graph()
 {
+    TraceLog(LOG_WARNING, "Destroying graph...");
+    for(auto v : _vehicles) delete v;
+    TraceLog(LOG_WARNING, "Vehicles despawn successful");
+    for(auto n : _nodes) delete n;
+    TraceLog(LOG_WARNING, "Nodes despawn successful");
+    TraceLog(LOG_WARNING, "Graph succesfully deleted");
 }
 
 Node *Graph::addNode(Vector3 pos, bool start, bool end, Util::VehicleType allowedVehicles, Color color)
@@ -160,7 +138,7 @@ void Graph::spawnVehicle(Util::VehicleType kind)
 
     auto path = findPath(start, end, kind);
 
-    Vehicle *v = new Car(0, 0, 0, path);
+    Vehicle *v = new Car(0, 0, 0, _vehicles, _trafficLights, path);
 
     TraceLog(LOG_WARNING, "Spawning vehicle with path of length %lu, start=%x, end=%x", path.size(), start, end);
 

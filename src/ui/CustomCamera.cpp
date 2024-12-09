@@ -1,8 +1,8 @@
 #include "CustomCamera.hpp"
 
 CustomCamera::CustomCamera(Graph &graph) : _nextPosition({Util::BaseZoom, PI / 4, 0}),
-                                              _zoom(50),
-                                              _graph(graph)
+                                           _zoom(50),
+                                           _graph(graph)
 {
     position = (Vector3){50.0f, 50.0f, 50.0f}; // Camera position
     target = (Vector3){20, 0, 20};             // Camera looking at center of road
@@ -20,6 +20,8 @@ void CustomCamera::update(float dt)
     Vector2 dmouse = GetMouseDelta();
 
     auto pos = Math::cartesianToSpherical(position - target);
+
+    _ray = GetScreenToWorldRay(GetMousePosition(), *this);
 
     // If right mouse button is down
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
@@ -41,7 +43,6 @@ void CustomCamera::update(float dt)
     }
     else if (Util::DebugNodes && (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(Util::KeyAddNode) || IsKeyPressed(Util::KeyLinkNode)))
     {
-        _ray = GetScreenToWorldRay(GetMousePosition(), *this);
         if (IsKeyPressed(Util::KeyAddNode))
         {
             for (int i = 0; i < Util::Road.meshCount; i++)
@@ -86,11 +87,11 @@ bool CustomCamera::lookingAtNode(Node &node) const
 Vehicle *CustomCamera::getSelectedVehicle(Vehicle *previous)
 {
     Vehicle *newPtr = nullptr;
+
     for (auto v : _graph.getVehicles())
     {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            auto transform = v->getTransform();
 
             // // Offset the transform by the vehicle's positions
             // transform.m12 += v->_pos.x;
@@ -99,7 +100,7 @@ Vehicle *CustomCamera::getSelectedVehicle(Vehicle *previous)
 
             for (int i = 0; i < v->_model.meshCount; i++)
             {
-                auto meshHitInfo = GetRayCollisionMesh(_ray, v->_model.meshes[i], transform);
+                auto meshHitInfo = GetRayCollisionMesh(_ray, v->_model.meshes[i], v->_model.transform);
 
                 // If we hit the vehicle, return a pointer to it
                 if (meshHitInfo.hit)
@@ -120,7 +121,6 @@ Vehicle *CustomCamera::getSelectedVehicle(Vehicle *previous)
             }
         }
     }
-
     // If we didn't hit anything
     return newPtr;
 }

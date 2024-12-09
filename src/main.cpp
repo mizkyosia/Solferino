@@ -14,6 +14,7 @@
 #include "ui/UI.hpp"
 #include "ui/CustomCamera.hpp"
 #include "util/Misc.hpp"
+#include "agents/TrafficLights.hpp"
 
 using namespace std;
 
@@ -33,7 +34,8 @@ int main(int argc, char *argv[])
     SetTargetFPS(144);
     rlImGuiSetup(true);
 
-    Graph graph;
+    TrafficLightController trafficLights;
+    Graph graph(trafficLights);
     CustomCamera camera(graph);
     UI Ui(camera);
 
@@ -47,6 +49,7 @@ int main(int argc, char *argv[])
                   overlay = LoadRenderTexture(screenWidth, screenHeight);
 
     Util::LoadAllModels();
+
 
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -78,11 +81,12 @@ int main(int argc, char *argv[])
 
         for (auto v : graph.getVehicles())
         {
-            v->update();
             v->draw(Util::DebugVehicles);
             if (v->shouldDespawn())
                 toDespawn.push_back(v);
         }
+
+        trafficLights.draw();
 
         for (auto v : toDespawn)
             graph.despawnVehicle(v);
