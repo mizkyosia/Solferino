@@ -33,6 +33,7 @@ namespace Util
                                                             "Car_Pickup_5",
                                                             "Car_Police_0",
                                                             "Car_Police_1"};
+
         double t0 = GetTime() * 1000.0;
 
         Road = LoadModel("assets/models/road.vox");
@@ -44,6 +45,7 @@ namespace Util
         }
 
         double t1 = GetTime() * 1000.0;
+
 
         TraceLog(LOG_INFO, GetWorkingDirectory());
 

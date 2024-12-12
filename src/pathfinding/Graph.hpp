@@ -18,6 +18,10 @@ private:
 
     TrafficLightController& _trafficLights;
 
+    std::thread _t;
+
+    bool _stop = false;
+
 public:
     Graph(TrafficLightController& trafficLights);
     ~Graph();

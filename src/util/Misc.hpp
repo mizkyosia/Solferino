@@ -20,7 +20,7 @@ namespace Util
 
     const float SecurityDistance = 2;
     const float ReachDistance = 2.f;
-    const float BrakeStrength = 20;
+    const float BrakeStrength = 30;
 
     const auto KeyAddNode = KEY_E;
     const auto KeyLinkNode = KEY_Q;
@@ -33,11 +33,17 @@ namespace Util
 
     const float TurnDampening = 10.f;
 
-    const Vector3 WarnBoxSize = {2, 2, 4};
-    const Vector3 BrakeBoxSize = {2, 2, 2};
+    const Vector3 WarnBoxSize =  {1.5f, 1.5f, 4};
+    const Vector3 BrakeBoxSize = {1.5f, 1.5f, 2};
 
     const int CarVariantsNb = 26;
     inline Model CarModels[CarVariantsNb];
+
+    const int BusVariantsNb = 1;
+    inline Model BusModels[BusVariantsNb];
+
+    const int BikeVariantsNb = 3;
+    inline Model BikeModels[BikeVariantsNb];
 
     enum class VehicleType : char
     {

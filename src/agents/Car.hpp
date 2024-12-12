@@ -9,7 +9,7 @@ class Car : public Vehicle
     /// @brief Variables for generating the acceleration of this vehicle
     constexpr static float accelMin = 4, accelMax = 5;
     /// @brief Variables for generating the weight of this vehicle type. Used for deceleration
-    constexpr static float weightMin = 5, weightMax = 7;
+    constexpr static float weightMin = 10, weightMax = 15;
 
 public:
     

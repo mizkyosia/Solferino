@@ -9,6 +9,8 @@
 #include "util/Misc.hpp"
 #include "TrafficLights.hpp"
 
+inline std::mutex mtx;
+
 enum class VehicleState {
     Accelerating,
     Slowing,
@@ -31,10 +33,14 @@ protected:
     /// @brief Time of the last update. Used to keep track of the delta time between updates
     float _lastUpdateTime;
 
-    /// @brief Can the vehicle move ?
+    /// @brief Current state of the vehicle
     VehicleState _state = VehicleState::Slowing;
     /// @brief Should the vehice despawn next frame ?
     bool _despawn = false;
+    /// @brief Is the vehicle stopped at a traffic light ?
+    bool _stopped = false;
+    /// @brief Type of the vehicle
+    Util::VehicleType _type;
 
     /// @brief Position of the vehicle in 3D space
     Vector3 _pos;
@@ -48,9 +54,6 @@ protected:
     std::set<Vehicle*> & _vehicles;
     /// @brief Safe reference to the traffic lights & hitboxes
     TrafficLightController& _trafficLights;
-
-    /// @brief The thread of this vehicle. The vehicle does not exist only within the thread, but all of its actions must be performed within it
-    std::thread _t;
 
     /// @brief Variable representing the bounds of this vehicle type's sprite
     Vector3 _size;
@@ -95,7 +98,7 @@ public:
     bool shouldDespawn() const;
 
     /// @brief Checks if the vehcle has had any collision, or if it has detected another vehicle in its path
-    void checkCollisions();
+    void checkCollisions(float theta);
 
     /// @brief Adds the UI class as friend, allowing for use of otherwise private fields
     friend class UI;

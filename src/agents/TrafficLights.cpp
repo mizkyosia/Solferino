@@ -15,8 +15,8 @@ TrafficLightController::TrafficLightController() : _schedule(TrafficSchedule::Pa
     addHitbox(TrafficSchedule::X, {17.5f, 8}, {3, 1});
     addHitbox(TrafficSchedule::X, {22.5f, 32}, {3, 1});
 
-    addHitbox(TrafficSchedule::Z, {25, 13}, {1, 10});
-    addHitbox(TrafficSchedule::Z, {15, 27}, {1, 10});
+    addHitbox(TrafficSchedule::Z, {25, 13}, {1, 8});
+    addHitbox(TrafficSchedule::Z, {15, 27}, {1, 8});
 }
 
 TrafficLightController::~TrafficLightController()

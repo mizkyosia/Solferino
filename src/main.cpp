@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
 
         for (auto v : graph.getVehicles())
         {
+            v->update();
             v->draw(Util::DebugVehicles);
             if (v->shouldDespawn())
                 toDespawn.push_back(v);

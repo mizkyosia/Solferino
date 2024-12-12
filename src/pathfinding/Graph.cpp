@@ -1,8 +1,18 @@
 #include "Graph.hpp"
 #include "agents/Car.hpp"
 
-Graph::Graph(TrafficLightController& trafficLights) : _trafficLights(trafficLights)
+Graph::Graph(TrafficLightController &trafficLights) : _trafficLights(trafficLights)
 {
+    _t = std::thread{
+        [&]
+        {
+            while (!this->_stop)
+            {
+                spawnVehicle(Util::VehicleType::Car);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }};
+
     // End nodes
     Node *ends[6] = {
         addNode(Vector3(22.5f, 0, 0), false, true, Util::VehicleType::Car, RED),
@@ -64,11 +74,15 @@ Graph::Graph(TrafficLightController& trafficLights) : _trafficLights(trafficLigh
 
 Graph::~Graph()
 {
+    this->_stop = true;
     TraceLog(LOG_WARNING, "Destroying graph...");
-    for(auto v : _vehicles) delete v;
+    for (auto v : _vehicles)
+        delete v;
     TraceLog(LOG_WARNING, "Vehicles despawn successful");
-    for(auto n : _nodes) delete n;
+    for (auto n : _nodes)
+        delete n;
     TraceLog(LOG_WARNING, "Nodes despawn successful");
+    _t.join();
     TraceLog(LOG_WARNING, "Graph succesfully deleted");
 }
 
